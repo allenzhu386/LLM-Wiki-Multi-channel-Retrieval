@@ -1,0 +1,11 @@
+# Netlify 仅部署静态前端；RAG API 需单独部署（见 start-prod.sh / Railway 等）
+# 在 Netlify 控制台设置环境变量: RAG_API_URL = https://你的后端域名
+
+[build]
+  publish = "web"
+  command = "bash scripts/netlify-build.sh"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

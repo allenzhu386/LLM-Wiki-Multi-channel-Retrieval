@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>三国演义智能问答库</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "PingFang SC", "Microsoft YaHei", "STSong", sans-serif;
+      min-height: 100vh;
+      color: #e8ecf0;
+      background: #0a0e14 url("/assets/bg-three-kingdoms.png") center top / cover no-repeat fixed;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(
+        180deg,
+        rgba(8, 12, 20, 0.88) 0%,
+        rgba(12, 18, 32, 0.92) 35%,
+        rgba(10, 14, 24, 0.94) 100%
+      );
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 28px 20px 48px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      background: linear-gradient(90deg, #f5e6c8, #d4a84b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .badge-rag {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: rgba(29, 155, 240, 0.25);
+      border: 1px solid rgba(29, 155, 240, 0.5);
+      color: #7ec8ff;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-ghost {
+      padding: 7px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(0, 0, 0, 0.35);
+      color: #b8c4d0;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .btn-ghost:hover { border-color: rgba(255, 255, 255, 0.3); color: #fff; }
+
+    #status {
+      font-size: 12px;
+      color: #8b98a5;
+      max-width: 220px;
+    }
+
+    .search-box {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    #query {
+      flex: 1;
+      padding: 16px 18px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(0, 0, 0, 0.45);
+      color: #f0f3f6;
+      font-size: 15px;
+      line-height: 1.5;
+      resize: none;
+      min-height: 52px;
+      backdrop-filter: blur(6px);
+    }
+
+    #query:focus {
+      outline: none;
+      border-color: rgba(90, 160, 255, 0.55);
+      box-shadow: 0 0 0 2px rgba(29, 155, 240, 0.15);
+    }
+
+    #query::placeholder { color: #6b7a8a; }
+
+    .btn-primary {
+      padding: 0 28px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      background: linear-gradient(135deg, #1d9bf0 0%, #7b5cff 100%);
+      box-shadow: 0 4px 20px rgba(29, 155, 240, 0.35);
+    }
+
+    .btn-primary:hover { filter: brightness(1.08); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .hints {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 32px;
+      font-size: 13px;
+      color: #8b98a5;
+    }
+
+    .hints span { margin-right: 4px; }
+
+    .pill {
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(0, 0, 0, 0.35);
+      color: #c5d0db;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .pill:hover {
+      border-color: rgba(212, 168, 75, 0.45);
+      color: #f5e6c8;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 14px;
+      color: #dce4ec;
+    }
+
+    .section-title .icon {
+      width: 18px;
+      height: 18px;
+      opacity: 0.85;
+    }
+
+    .chunks { margin-bottom: 28px; }
+
+    .chunk-card {
+      background: rgba(12, 18, 28, 0.82);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      backdrop-filter: blur(8px);
+    }
+
+    .chunk-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+
+    .tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .tag-blue { background: rgba(29, 155, 240, 0.2); color: #7ec8ff; }
+    .tag-purple { background: rgba(123, 92, 255, 0.2); color: #c4b5ff; }
+    .tag-gray { background: rgba(255, 255, 255, 0.08); color: #9aa8b5; }
+    .tag-r1 { background: rgba(29, 155, 240, 0.25); color: #7ec8ff; border: 1px solid rgba(29, 155, 240, 0.4); font-weight: 600; }
+    .tag-r2 { background: rgba(61, 214, 140, 0.2); color: #6ee7a8; border: 1px solid rgba(61, 214, 140, 0.35); font-weight: 600; }
+    .tag-r3 { background: rgba(212, 168, 75, 0.2); color: #f5d78e; border: 1px solid rgba(212, 168, 75, 0.4); font-weight: 600; }
+    .tag-combo { background: rgba(123, 92, 255, 0.25); color: #d4c4ff; border: 1px solid rgba(123, 92, 255, 0.45); font-weight: 600; }
+    .route-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      color: #8b98a5;
+    }
+    .score-hint {
+      font-size: 11px;
+      color: #6b7a8a;
+      font-weight: normal;
+      margin-left: 6px;
+    }
+
+    .similarity {
+      font-size: 13px;
+      color: #3dd68c;
+      white-space: nowrap;
+      font-weight: 600;
+    }
+
+    .chunk-title {
+      font-size: 14px;
+      color: #5eb8ff;
+      margin-bottom: 8px;
+      word-break: break-all;
+    }
+
+    .chunk-body {
+      font-size: 13px;
+      line-height: 1.65;
+      color: #b0bcc8;
+      max-height: 160px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .chunk-body::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 36px;
+      background: linear-gradient(transparent, rgba(12, 18, 28, 0.95));
+    }
+
+    .chunk-body .wikilink {
+      color: #d4a84b;
+    }
+
+    .answer-panel {
+      background: rgba(12, 18, 28, 0.88);
+      border: 1px solid rgba(212, 168, 75, 0.2);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 20px;
+      display: none;
+      backdrop-filter: blur(8px);
+    }
+
+    .answer-panel.visible { display: block; }
+
+    .answer-panel h3 {
+      font-size: 14px;
+      color: #d4a84b;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+
+    .answer-text {
+      font-size: 15px;
+      line-height: 1.75;
+      color: #e8ecf0;
+      white-space: pre-wrap;
+    }
+
+    .router-note {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 12px;
+      color: #8b98a5;
+    }
+
+    .empty-hint {
+      text-align: center;
+      padding: 40px 20px;
+      color: #6b7a8a;
+      font-size: 14px;
+    }
+
+    .footer-quote {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 13px;
+      color: rgba(212, 168, 75, 0.65);
+      letter-spacing: 1px;
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div class="brand">
+        <h1>三国演义智能问答库</h1>
+        <span class="badge-rag">RAG</span>
+      </div>
+      <div class="top-actions">
+        <button type="button" class="btn-ghost" id="btnIngest">重建索引</button>
+        <span id="status"></span>
+      </div>
+    </header>
+
+    <div class="search-box">
+      <textarea id="query" rows="1" placeholder="输入问题，例如：关羽是怎么死的？赤壁之战谁赢了？"></textarea>
+      <button type="button" class="btn-primary" id="btnSend">检索 &amp; 回答</button>
+    </div>
+
+    <div class="hints">
+      <span>试试：</span>
+      <button type="button" class="pill" data-q="关羽是怎么死的？">关羽是怎么死的</button>
+      <button type="button" class="pill" data-q="刘备和诸葛亮是什么关系？">刘备诸葛亮关系</button>
+      <button type="button" class="pill" data-q="赤壁之战主要经过">赤壁之战</button>
+      <button type="button" class="pill" data-q="第七回讲了什么？">第七回内容</button>
+      <button type="button" class="pill" data-q="曹操和刘备的关系">曹刘关系</button>
+    </div>
+
+    <section class="answer-panel" id="answerPanel">
+      <h3>智能回答</h3>
+      <div class="answer-text" id="answerText"></div>
+      <div class="router-note hidden" id="routerNote"></div>
+    </section>
+
+    <section class="chunks hidden" id="chunksSection">
+      <div class="section-title">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        <span id="chunksTitle">检索到的文档切片</span>
+      </div>
+      <div class="route-legend" id="routeLegend"></div>
+      <div id="chunksList"></div>
+    </section>
+
+    <p class="empty-hint" id="emptyHint">输入问题后点击「检索 &amp; 回答」，将展示检索切片与生成答案</p>
+
+    <p class="footer-quote">岁月悠悠，掩不住历史沧桑；江山如画，卷不走英雄本色</p>
+  </div>
+
+  <script src="/config.js"></script>
+  <script>
+    let sessionId = null;
+
+    function apiUrl(path) {
+      const base = (window.API_BASE || "").replace(/\/$/, "");
+      return base + path;
+    }
+
+    const ROUTE_META = {
+      R1: { label: "R1 混合检索", cls: "tag-r1", desc: "向量 + BM25" },
+      R2: { label: "R2 实体图谱", cls: "tag-r2", desc: "人物关系与实体页" },
+      R3: { label: "R3 目录检索", cls: "tag-r3", desc: "回目/分部索引" },
+      组合: { label: "多路命中", cls: "tag-combo", desc: "多条通路同时召回" },
+    };
+    const TYPE_LABEL = {
+      entity: "实体", concept: "概念", faction: "阵营",
+      raw_chunk: "原文", chapter_summary: "回目",
+      index: "索引", part: "分部"
+    };
+
+    const queryEl = document.getElementById("query");
+    const statusEl = document.getElementById("status");
+    const btnSend = document.getElementById("btnSend");
+    const chunksSection = document.getElementById("chunksSection");
+    const chunksList = document.getElementById("chunksList");
+    const chunksTitle = document.getElementById("chunksTitle");
+    const answerPanel = document.getElementById("answerPanel");
+    const answerText = document.getElementById("answerText");
+    const routerNote = document.getElementById("routerNote");
+    const routeLegend = document.getElementById("routeLegend");
+    const emptyHint = document.getElementById("emptyHint");
+
+    function escapeHtml(s) {
+      const d = document.createElement("div");
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    function renderWikilinks(text) {
+      const safe = escapeHtml(text);
+      return safe.replace(
+        /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g,
+        (_, a, b) => `<span class="wikilink">[[${b || a}]]</span>`
+      );
+    }
+
+    function displaySimilarity(c) {
+      if (c.similarity != null) return Number(c.similarity).toFixed(1);
+      const p = Math.min(99.9, Math.max(0, Number(c.score) * 100));
+      return p.toFixed(1);
+    }
+
+    function routeTags(c) {
+      const by = c.retrieved_by && c.retrieved_by.length
+        ? c.retrieved_by
+        : [c.route || "R1"];
+      if (by.length > 1) {
+        const parts = by.map((r) => {
+          const m = ROUTE_META[r] || { label: r, cls: "tag-gray" };
+          return `<span class="tag ${m.cls}">${escapeHtml(m.label)}</span>`;
+        });
+        parts.push(`<span class="tag tag-combo">${escapeHtml(by.join(" + "))}</span>`);
+        return parts.join("");
+      }
+      const r = by[0];
+      const m = ROUTE_META[r] || ROUTE_META["R1"];
+      return `<span class="tag ${m.cls}">${escapeHtml(m.label)}</span>`;
+    }
+
+    function renderRouteLegend(enabled) {
+      const routes = enabled && enabled.length ? enabled : ["R1", "R2", "R3"];
+      const parts = routes.map((r) => {
+        const m = ROUTE_META[r];
+        if (!m) return "";
+        return `<span class="tag ${m.cls}">${m.label}</span><span>${m.desc}</span>`;
+      }).filter(Boolean);
+      routeLegend.innerHTML = parts.join('<span style="margin:0 8px;color:#4a5568">|</span>')
+        + '<span class="score-hint">相关度为本次候选内相对排名</span>';
+    }
+
+    function docTypeLabel(t, path) {
+      if (t && TYPE_LABEL[t]) return TYPE_LABEL[t];
+      if (path && path.includes("chapters")) return "回目";
+      if (path && path.includes("entity")) return "实体";
+      return t || "文档";
+    }
+
+    function renderChunks(citations) {
+      if (!citations || !citations.length) {
+        chunksSection.classList.add("hidden");
+        return;
+      }
+      chunksSection.classList.remove("hidden");
+      chunksTitle.textContent = "检索到的文档切片 (" + citations.length + ")";
+      chunksList.innerHTML = citations.map((c, i) => {
+        const dtype = docTypeLabel(c.doc_type, c.source_path);
+        const pathShort = (c.source_path || "").replace(/^.*\/wiki\//, "wiki/");
+        const body = c.content ? renderWikilinks(c.content) : "（无预览）";
+        const sim = displaySimilarity(c);
+        return `
+          <article class="chunk-card">
+            <div class="chunk-head">
+              <div class="tags">
+                ${routeTags(c)}
+                <span class="tag tag-purple">${escapeHtml(dtype)}</span>
+                <span class="tag tag-gray">${escapeHtml(pathShort)}</span>
+              </div>
+              <span class="similarity">相关度 ${sim}%</span>
+            </div>
+            <div class="chunk-title">${i + 1}. ${escapeHtml(c.title || "未命名")}</div>
+            <div class="chunk-body">${body}</div>
+          </article>`;
+      }).join("");
+    }
+
+    function renderAnswer(data) {
+      answerPanel.classList.add("visible");
+      answerText.textContent = data.answer || "";
+      if (data.router && data.router.reasoning) {
+        routerNote.classList.remove("hidden");
+        routerNote.textContent = "检索策略：" + data.router.reasoning;
+      } else {
+        routerNote.classList.add("hidden");
+      }
+    }
+
+    async function send() {
+      const q = queryEl.value.trim();
+      if (!q) return;
+
+      btnSend.disabled = true;
+      statusEl.textContent = "检索与生成中…";
+      emptyHint.classList.add("hidden");
+      answerPanel.classList.remove("visible");
+      chunksSection.classList.add("hidden");
+
+      try {
+        const res = await fetch(apiUrl("/api/chat"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: q, session_id: sessionId }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || res.statusText);
+        sessionId = data.session_id;
+        renderAnswer(data);
+        renderRouteLegend(data.enabled_routes);
+        renderChunks(data.citations);
+      } catch (e) {
+        answerPanel.classList.add("visible");
+        answerText.textContent = "错误：" + e.message;
+        routerNote.classList.add("hidden");
+      }
+
+      btnSend.disabled = false;
+      statusEl.textContent = "";
+    }
+
+    btnSend.onclick = send;
+    queryEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        send();
+      }
+    });
+
+    document.querySelectorAll(".pill").forEach((el) => {
+      el.addEventListener("click", () => {
+        queryEl.value = el.getAttribute("data-q") || "";
+        send();
+      });
+    });
+
+    if (location.hostname.endsWith(".netlify.app")) {
+      const btn = document.getElementById("btnIngest");
+      if (btn) btn.style.display = "none";
+    }
+
+    document.getElementById("btnIngest").onclick = async () => {
+      if (!confirm("将重建数据库与向量索引，可能需数分钟。继续？")) return;
+      statusEl.textContent = "灌库中…";
+      try {
+        const res = await fetch(apiUrl("/api/ingest"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ build_vectors: true }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "失败");
+        statusEl.textContent = "灌库完成";
+      } catch (e) {
+        statusEl.textContent = "灌库失败: " + e.message;
+      }
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>三国演义 · 人物关系图</title>
+  <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; background: #1a1a2e; color: #eee; }
+    #header {
+      padding: 12px 16px; background: #16213e; border-bottom: 1px solid #0f3460;
+      display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+    }
+    h1 { font-size: 18px; font-weight: 600; }
+    .legend { display: flex; gap: 8px; flex-wrap: wrap; }
+    .leg { padding: 4px 10px; border-radius: 4px; font-size: 12px; }
+    .btns { display: flex; gap: 6px; flex-wrap: wrap; }
+  button {
+      padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer;
+      background: #0f3460; color: #eee; font-size: 13px;
+    }
+    button:hover { background: #e94560; }
+    button.active { background: #e94560; }
+    #graph { width: 100vw; height: calc(100vh - 56px); background: #0d0d1a; }
+    #tip {
+      position: fixed; bottom: 12px; left: 12px; max-width: 360px;
+      padding: 10px 14px; background: rgba(22,33,62,.95); border-radius: 8px;
+      font-size: 13px; line-height: 1.5; display: none; border: 1px solid #0f3460;
+    }
+  </style>
+</head>
+<body>
+  <div id="header">
+    <h1>三国演义 · 阵营人物关系图</h1>
+    <div class="legend"><span class="leg" style="background:#8B2500">蜀汉</span><span class="leg" style="background:#1A5276">曹魏</span><span class="leg" style="background:#1E6B3A">东吴</span><span class="leg" style="background:#5D6D7E">群雄</span><span class="leg" style="background:#555">虚线=跨阵营</span></div>
+    <div class="btns">
+      <button class="active" data-filter="all">全部</button>
+      <button data-filter="shu">蜀汉</button>
+      <button data-filter="wei">曹魏</button>
+      <button data-filter="wu">东吴</button>
+      <button data-filter="qun">群雄</button>
+    </div>
+  </div>
+  <div id="graph"></div>
+  <div id="tip"></div>
+  <script>
+    const RAW = {"nodes": [{"id": "刘备", "label": "刘备", "group": "shu", "faction": "蜀汉", "color": {"bg": "#8B2500", "border": "#5C1800", "name": "蜀汉"}}, {"id": "关羽", "label": "关羽", "group": "shu", "faction": "蜀汉", "color": {"bg": "#8B2500", "border": "#5C1800", "name": "蜀汉"}}, {"id": "张飞", "label": "张飞", "group": "shu", "faction": "蜀汉", "color": {"bg": "#8B2500", "border": "#5C1800", "name": "蜀汉"}}, {"id": "诸葛亮", "label": "诸葛亮", "group": "shu", "faction": "蜀汉", "color": {"bg": "#8B2500", "border": "#5C1800", "name": "蜀汉"}}, {"id": "赵云", "label": "赵云", "group": "shu", "faction": "蜀汉", "color": {"bg": "#8B2500", "border": "#5C1800", "name": "蜀汉"}}, {"id": "马超", "label": "马超", "group": "shu", "faction": "蜀汉", "color": {"bg": "#8B2500", "border": "#5C1800", "name": "蜀汉"}}, {"id": "黄忠", "label": "黄忠", "group": "shu", "faction": "蜀汉", "color": {"bg": "#8B2500", "border": "#5C1800", "name": "蜀汉"}}, {"id": "魏延", "label": "魏延", "group": "shu", "faction": "蜀汉", "color": {"bg": "#8B2500", "border": "#5C1800", "name": "蜀汉"}}, {"id": "庞统", "label": "庞统", "group": "shu", "faction": "蜀汉", "color": {"bg": "#8B2500", "border": "#5C1800", "name": "蜀汉"}}, {"id": "姜维", "label": "姜维", "group": "shu", "faction": "蜀汉", "color": {"bg": "#8B2500", "border": "#5C1800", "name": "蜀汉"}}, {"id": "刘禅", "label": "刘禅", "group": "shu", "faction": "蜀汉", "color": {"bg": "#8B2500", "border": "#5C1800", "name": "蜀汉"}}, {"id": "关平", "label": "关平", "group": "shu", "faction": "蜀汉", "color": {"bg": "#8B2500", "border": "#5C1800", "name": "蜀汉"}}, {"id": "关兴", "label": "关兴", "group": "shu", "faction": "蜀汉", "color": {"bg": "#8B2500", "border": "#5C1800", "name": "蜀汉"}}, {"id": "张苞", "label": "张苞", "group": "shu", "faction": "蜀汉", "color": {"bg": "#8B2500", "border": "#5C1800", "name": "蜀汉"}}, {"id": "马岱", "label": "马岱", "group": "shu", "faction": "蜀汉", "color": {"bg": "#8B2500", "border": "#5C1800", "name": "蜀汉"}}, {"id": "曹操", "label": "曹操", "group": "wei", "faction": "曹魏", "color": {"bg": "#1A5276", "border": "#0E2F44", "name": "曹魏"}}, {"id": "曹丕", "label": "曹丕", "group": "wei", "faction": "曹魏", "color": {"bg": "#1A5276", "border": "#0E2F44", "name": "曹魏"}}, {"id": "司马懿", "label": "司马懿", "group": "wei", "faction": "曹魏", "color": {"bg": "#1A5276", "border": "#0E2F44", "name": "曹魏"}}, {"id": "司马师", "label": "司马师", "group": "wei", "faction": "曹魏", "color": {"bg": "#1A5276", "border": "#0E2F44", "name": "曹魏"}}, {"id": "司马昭", "label": "司马昭", "group": "wei", "faction": "曹魏", "color": {"bg": "#1A5276", "border": "#0E2F44", "name": "曹魏"}}, {"id": "荀彧", "label": "荀彧", "group": "wei", "faction": "曹魏", "color": {"bg": "#1A5276", "border": "#0E2F44", "name": "曹魏"}}, {"id": "郭嘉", "label": "郭嘉", "group": "wei", "faction": "曹魏", "color": {"bg": "#1A5276", "border": "#0E2F44", "name": "曹魏"}}, {"id": "贾诩", "label": "贾诩", "group": "wei", "faction": "曹魏", "color": {"bg": "#1A5276", "border": "#0E2F44", "name": "曹魏"}}, {"id": "典韦", "label": "典韦", "group": "wei", "faction": "曹魏", "color": {"bg": "#1A5276", "border": "#0E2F44", "name": "曹魏"}}, {"id": "许褚", "label": "许褚", "group": "wei", "faction": "曹魏", "color": {"bg": "#1A5276", "border": "#0E2F44", "name": "曹魏"}}, {"id": "张辽", "label": "张辽", "group": "wei", "faction": "曹魏", "color": {"bg": "#1A5276", "border": "#0E2F44", "name": "曹魏"}}, {"id": "徐晃", "label": "徐晃", "group": "wei", "faction": "曹魏", "color": {"bg": "#1A5276", "border": "#0E2F44", "name": "曹魏"}}, {"id": "张郃", "label": "张郃", "group": "wei", "faction": "曹魏", "color": {"bg": "#1A5276", "border": "#0E2F44", "name": "曹魏"}}, {"id": "曹仁", "label": "曹仁", "group": "wei", "faction": "曹魏", "color": {"bg": "#1A5276", "border": "#0E2F44", "name": "曹魏"}}, {"id": "曹洪", "label": "曹洪", "group": "wei", "faction": "曹魏", "color": {"bg": "#1A5276", "border": "#0E2F44", "name": "曹魏"}}, {"id": "夏侯惇", "label": "夏侯惇", "group": "wei", "faction": "曹魏", "color": {"bg": "#1A5276", "border": "#0E2F44", "name": "曹魏"}}, {"id": "夏侯渊", "label": "夏侯渊", "group": "wei", "faction": "曹魏", "color": {"bg": "#1A5276", "border": "#0E2F44", "name": "曹魏"}}, {"id": "孙坚", "label": "孙坚", "group": "wu", "faction": "东吴", "color": {"bg": "#1E6B3A", "border": "#0F3D22", "name": "东吴"}}, {"id": "孙策", "label": "孙策", "group": "wu", "faction": "东吴", "color": {"bg": "#1E6B3A", "border": "#0F3D22", "name": "东吴"}}, {"id": "孙权", "label": "孙权", "group": "wu", "faction": "东吴", "color": {"bg": "#1E6B3A", "border": "#0F3D22", "name": "东吴"}}, {"id": "周瑜", "label": "周瑜", "group": "wu", "faction": "东吴", "color": {"bg": "#1E6B3A", "border": "#0F3D22", "name": "东吴"}}, {"id": "鲁肃", "label": "鲁肃", "group": "wu", "faction": "东吴", "color": {"bg": "#1E6B3A", "border": "#0F3D22", "name": "东吴"}}, {"id": "吕蒙", "label": "吕蒙", "group": "wu", "faction": "东吴", "color": {"bg": "#1E6B3A", "border": "#0F3D22", "name": "东吴"}}, {"id": "陆逊", "label": "陆逊", "group": "wu", "faction": "东吴", "color": {"bg": "#1E6B3A", "border": "#0F3D22", "name": "东吴"}}, {"id": "黄盖", "label": "黄盖", "group": "wu", "faction": "东吴", "color": {"bg": "#1E6B3A", "border": "#0F3D22", "name": "东吴"}}, {"id": "程普", "label": "程普", "group": "wu", "faction": "东吴", "color": {"bg": "#1E6B3A", "border": "#0F3D22", "name": "东吴"}}, {"id": "韩当", "label": "韩当", "group": "wu", "faction": "东吴", "color": {"bg": "#1E6B3A", "border": "#0F3D22", "name": "东吴"}}, {"id": "甘宁", "label": "甘宁", "group": "wu", "faction": "东吴", "color": {"bg": "#1E6B3A", "border": "#0F3D22", "name": "东吴"}}, {"id": "太史慈", "label": "太史慈", "group": "wu", "faction": "东吴", "color": {"bg": "#1E6B3A", "border": "#0F3D22", "name": "东吴"}}, {"id": "张昭", "label": "张昭", "group": "wu", "faction": "东吴", "color": {"bg": "#1E6B3A", "border": "#0F3D22", "name": "东吴"}}, {"id": "孙尚香", "label": "孙尚香", "group": "wu", "faction": "东吴", "color": {"bg": "#1E6B3A", "border": "#0F3D22", "name": "东吴"}}, {"id": "董卓", "label": "董卓", "group": "qun", "faction": "群雄", "color": {"bg": "#5D6D7E", "border": "#34495E", "name": "群雄"}}, {"id": "吕布", "label": "吕布", "group": "qun", "faction": "群雄", "color": {"bg": "#5D6D7E", "border": "#34495E", "name": "群雄"}}, {"id": "貂蝉", "label": "貂蝉", "group": "qun", "faction": "群雄", "color": {"bg": "#5D6D7E", "border": "#34495E", "name": "群雄"}}, {"id": "李儒", "label": "李儒", "group": "qun", "faction": "群雄", "color": {"bg": "#5D6D7E", "border": "#34495E", "name": "群雄"}}, {"id": "王允", "label": "王允", "group": "qun", "faction": "群雄", "color": {"bg": "#5D6D7E", "border": "#34495E", "name": "群雄"}}, {"id": "袁绍", "label": "袁绍", "group": "qun", "faction": "群雄", "color": {"bg": "#5D6D7E", "border": "#34495E", "name": "群雄"}}, {"id": "袁术", "label": "袁术", "group": "qun", "faction": "群雄", "color": {"bg": "#5D6D7E", "border": "#34495E", "name": "群雄"}}, {"id": "公孙瓒", "label": "公孙瓒", "group": "qun", "faction": "群雄", "color": {"bg": "#5D6D7E", "border": "#34495E", "name": "群雄"}}, {"id": "刘表", "label": "刘表", "group": "qun", "faction": "群雄", "color": {"bg": "#5D6D7E", "border": "#34495E", "name": "群雄"}}, {"id": "刘璋", "label": "刘璋", "group": "qun", "faction": "群雄", "color": {"bg": "#5D6D7E", "border": "#34495E", "name": "群雄"}}, {"id": "张角", "label": "张角", "group": "qun", "faction": "群雄", "color": {"bg": "#5D6D7E", "border": "#34495E", "name": "群雄"}}, {"id": "何进", "label": "何进", "group": "qun", "faction": "群雄", "color": {"bg": "#5D6D7E", "border": "#34495E", "name": "群雄"}}, {"id": "华雄", "label": "华雄", "group": "qun", "faction": "群雄", "color": {"bg": "#5D6D7E", "border": "#34495E", "name": "群雄"}}, {"id": "颜良", "label": "颜良", "group": "qun", "faction": "群雄", "color": {"bg": "#5D6D7E", "border": "#34495E", "name": "群雄"}}, {"id": "文丑", "label": "文丑", "group": "qun", "faction": "群雄", "color": {"bg": "#5D6D7E", "border": "#34495E", "name": "群雄"}}, {"id": "邓艾", "label": "邓艾", "group": "other", "faction": "其他", "color": {"bg": "#95A5A6", "border": "#7F8C8D", "name": "其他"}}, {"id": "钟会", "label": "钟会", "group": "other", "faction": "其他", "color": {"bg": "#95A5A6", "border": "#7F8C8D", "name": "其他"}}], "edges": [{"from": "刘备", "to": "关羽", "label": "桃园结义；结拜兄弟；荆州留守", "title": "桃园结义；结拜兄弟；荆州留守", "dashes": false}, {"from": "刘备", "to": "张飞", "label": "桃园结义；结拜兄弟；长坂坡据水断桥", "title": "桃园结义；结拜兄弟；长坂坡据水断桥", "dashes": false}, {"from": "关羽", "to": "张飞", "label": "桃园结义；结拜兄弟", "title": "桃园结义；结拜兄弟", "dashes": false}, {"from": "刘备", "to": "诸葛亮", "label": "三顾茅庐；君臣；托孤白帝城", "title": "三顾茅庐；君臣；托孤白帝城", "dashes": false}, {"from": "刘备", "to": "赵云", "label": "君臣；长坂坡救阿斗；汉中之战", "title": "君臣；长坂坡救阿斗；汉中之战", "dashes": false}, {"from": "刘备", "to": "马超", "label": "渭水之战后归蜀；封五虎上将", "title": "渭水之战后归蜀；封五虎上将", "dashes": false}, {"from": "刘备", "to": "黄忠", "label": "定军山斩夏侯渊后归蜀；五虎上将", "title": "定军山斩夏侯渊后归蜀；五虎上将", "dashes": false}, {"from": "刘备", "to": "魏延", "label": "入蜀功臣；汉中太守；子午谷之谋", "title": "入蜀功臣；汉中太守；子午谷之谋", "dashes": false}, {"from": "刘备", "to": "庞统", "label": "君臣；入川献连环计；落凤坡阵亡", "title": "君臣；入川献连环计；落凤坡阵亡", "dashes": false}, {"from": "刘备", "to": "姜维", "label": "相父诸葛亮所传嗣将；九伐中原", "title": "相父诸葛亮所传嗣将；九伐中原", "dashes": false}, {"from": "刘备", "to": "刘禅", "label": "父子；白帝城托孤", "title": "父子；白帝城托孤", "dashes": false}, {"from": "诸葛亮", "to": "赵云", "label": "北伐同僚；箕谷疑兵", "title": "北伐同僚；箕谷疑兵", "dashes": false}, {"from": "诸葛亮", "to": "姜维", "label": "师徒；九伐中原", "title": "师徒；九伐中原", "dashes": false}, {"from": "诸葛亮", "to": "魏延", "label": "北伐共事；子午谷之谋分歧", "title": "北伐共事；子午谷之谋分歧", "dashes": false}, {"from": "诸葛亮", "to": "马超", "label": "北伐同事", "title": "北伐同事", "dashes": false}, {"from": "关羽", "to": "关平", "label": "父子；荆州随征", "title": "父子；荆州随征", "dashes": false}, {"from": "关羽", "to": "关兴", "label": "父子", "title": "父子", "dashes": false}, {"from": "张飞", "to": "张苞", "label": "父子", "title": "父子", "dashes": false}, {"from": "曹操", "to": "曹丕", "label": "父子；代汉建魏", "title": "父子；代汉建魏", "dashes": false}, {"from": "曹操", "to": "司马懿", "label": "君臣；托孤辅政；后夺权", "title": "君臣；托孤辅政；后夺权", "dashes": false}, {"from": "曹操", "to": "荀彧", "label": "君臣；官渡定策；后殉汉死", "title": "君臣；官渡定策；后殉汉死", "dashes": false}, {"from": "曹操", "to": "郭嘉", "label": "君臣；官渡前病逝；十胜十败论", "title": "君臣；官渡前病逝；十胜十败论", "dashes": false}, {"from": "曹操", "to": "贾诩", "label": "谋臣；宛城之败后投曹；立嗣定储", "title": "谋臣；宛城之败后投曹；立嗣定储", "dashes": false}, {"from": "曹操", "to": "典韦", "label": "部将；宛城护主战死", "title": "部将；宛城护主战死", "dashes": false}, {"from": "曹操", "to": "许褚", "label": "部将；渭水护曹", "title": "部将；渭水护曹", "dashes": false}, {"from": "曹操", "to": "张辽", "label": "部将；白狼山、逍遥津", "title": "部将；白狼山、逍遥津", "dashes": false}, {"from": "曹操", "to": "徐晃", "label": "部将；樊城解羽之围", "title": "部将；樊城解羽之围", "dashes": false}, {"from": "曹操", "to": "张郃", "label": "部将；官渡降曹；街亭破马谡", "title": "部将；官渡降曹；街亭破马谡", "dashes": false}, {"from": "曹操", "to": "曹仁", "label": "宗室将；樊城守将", "title": "宗室将；樊城守将", "dashes": false}, {"from": "曹操", "to": "曹洪", "label": "宗室将；荥阳救驾", "title": "宗室将；荥阳救驾", "dashes": false}, {"from": "曹操", "to": "夏侯惇", "label": "宗室将；兖州平定", "title": "宗室将；兖州平定", "dashes": false}, {"from": "曹操", "to": "夏侯渊", "label": "宗室将；定军山阵亡", "title": "宗室将；定军山阵亡", "dashes": false}, {"from": "司马懿", "to": "司马师", "label": "父子；正始之变", "title": "父子；正始之变", "dashes": false}, {"from": "司马懿", "to": "司马昭", "label": "父子；灭蜀之战", "title": "父子；灭蜀之战", "dashes": false}, {"from": "曹丕", "to": "司马懿", "label": "君臣；辅政四大臣", "title": "君臣；辅政四大臣", "dashes": false}, {"from": "孙坚", "to": "孙策", "label": "父子；江东基业", "title": "父子；江东基业", "dashes": false}, {"from": "孙策", "to": "孙权", "label": "兄弟；遗命传弟", "title": "兄弟；遗命传弟", "dashes": false}, {"from": "孙权", "to": "周瑜", "label": "君臣；赤壁主帅；鲁肃后继", "title": "君臣；赤壁主帅；鲁肃后继", "dashes": false}, {"from": "孙权", "to": "鲁肃", "label": "君臣；借荆州主张；联刘抗曹", "title": "君臣；借荆州主张；联刘抗曹", "dashes": false}, {"from": "孙权", "to": "吕蒙", "label": "君臣；白衣渡江取荆州", "title": "君臣；白衣渡江取荆州", "dashes": false}, {"from": "孙权", "to": "陆逊", "label": "君臣；夷陵破刘备；石亭败曹休", "title": "君臣；夷陵破刘备；石亭败曹休", "dashes": false}, {"from": "孙权", "to": "张昭", "label": "重臣；顾命文武", "title": "重臣；顾命文武", "dashes": false}, {"from": "孙权", "to": "甘宁", "label": "部将；百骑劫曹营", "title": "部将；百骑劫曹营", "dashes": false}, {"from": "孙权", "to": "太史慈", "label": "部将；神亭岭斗小霸王", "title": "部将；神亭岭斗小霸王", "dashes": false}, {"from": "周瑜", "to": "孙策", "label": "连襟；共定江东", "title": "连襟；共定江东", "dashes": false}, {"from": "黄盖", "to": "程普", "label": "江东老将；赤壁苦肉计", "title": "江东老将；赤壁苦肉计", "dashes": false}, {"from": "黄盖", "to": "韩当", "label": "江东宿将", "title": "江东宿将", "dashes": false}, {"from": "董卓", "to": "吕布", "label": "义父子；凤仪亭反目；诛董卓", "title": "义父子；凤仪亭反目；诛董卓", "dashes": false}, {"from": "董卓", "to": "李儒", "label": "谋臣；迁都长安", "title": "谋臣；迁都长安", "dashes": false}, {"from": "王允", "to": "貂蝉", "label": "连环计；诛董卓", "title": "连环计；诛董卓", "dashes": false}, {"from": "吕布", "to": "貂蝉", "label": "连环计；凤仪亭", "title": "连环计；凤仪亭", "dashes": false}, {"from": "袁绍", "to": "颜良", "label": "部将；官渡战死", "title": "部将；官渡战死", "dashes": false}, {"from": "袁绍", "to": "文丑", "label": "部将；官渡战死", "title": "部将；官渡战死", "dashes": false}, {"from": "袁术", "to": "袁绍", "label": "兄弟；袁术称帝对立", "title": "兄弟；袁术称帝对立", "dashes": false}, {"from": "刘备", "to": "曹操", "label": "青梅煮酒论英雄；官渡后依附又独立；汉中之战", "title": "青梅煮酒论英雄；官渡后依附又独立；汉中之战", "dashes": true}, {"from": "刘备", "to": "孙权", "label": "赤壁联盟；借荆州；联姻孙夫人；夷陵之战", "title": "赤壁联盟；借荆州；联姻孙夫人；夷陵之战", "dashes": true}, {"from": "关羽", "to": "曹操", "label": "下邳降曹受封；斩颜良解白马围；襄樊被俘", "title": "下邳降曹受封；斩颜良解白马围；襄樊被俘", "dashes": true}, {"from": "关羽", "to": "孙权", "label": "荆州归属；吕蒙袭荆州；败走麦城", "title": "荆州归属；吕蒙袭荆州；败走麦城", "dashes": true}, {"from": "张飞", "to": "曹操", "label": "长坂坡当阳桥；汉中之战", "title": "长坂坡当阳桥；汉中之战", "dashes": true}, {"from": "诸葛亮", "to": "司马懿", "label": "北伐对峙；五丈原对峙", "title": "北伐对峙；五丈原对峙", "dashes": true}, {"from": "诸葛亮", "to": "周瑜", "label": "赤壁合作；荆州之争；既生瑜何生亮", "title": "赤壁合作；荆州之争；既生瑜何生亮", "dashes": true}, {"from": "赵云", "to": "曹操", "label": "长坂坡七进七出；汉水空营", "title": "长坂坡七进七出；汉水空营", "dashes": true}, {"from": "周瑜", "to": "曹操", "label": "赤壁火攻；南郡争夺", "title": "赤壁火攻；南郡争夺", "dashes": true}, {"from": "孙权", "to": "曹操", "label": "赤壁对立；濡须口；石亭之战", "title": "赤壁对立；濡须口；石亭之战", "dashes": true}, {"from": "吕布", "to": "曹操", "label": "兖州争夺；下邳白门楼被缢", "title": "兖州争夺；下邳白门楼被缢", "dashes": true}, {"from": "吕布", "to": "刘备", "label": "徐州反复；白门楼乞命", "title": "徐州反复；白门楼乞命", "dashes": true}, {"from": "袁绍", "to": "曹操", "label": "官渡决战；河北吞并", "title": "官渡决战；河北吞并", "dashes": true}, {"from": "马超", "to": "曹操", "label": "渭水之战；杀操父仇", "title": "渭水之战；杀操父仇", "dashes": true}, {"from": "张辽", "to": "孙权", "label": "逍遥津八百破十萬", "title": "逍遥津八百破十萬", "dashes": true}, {"from": "甘宁", "to": "曹操", "label": "百骑劫营", "title": "百骑劫营", "dashes": true}, {"from": "董卓", "to": "曹操", "label": "献刀未遂；诸侯讨董", "title": "献刀未遂；诸侯讨董", "dashes": true}, {"from": "刘表", "to": "刘备", "label": "荆州依附；托孤刘琦", "title": "荆州依附；托孤刘琦", "dashes": true}, {"from": "刘璋", "to": "刘备", "label": "同宗；入川夺益州", "title": "同宗；入川夺益州", "dashes": true}, {"from": "公孙瓒", "to": "刘备", "label": "同窗；早年支援", "title": "同窗；早年支援", "dashes": true}, {"from": "公孙瓒", "to": "袁绍", "label": "磐河之战；河北对立", "title": "磐河之战；河北对立", "dashes": false}, {"from": "张角", "to": "刘备", "label": "黄巾之乱初战；讨贼立功", "title": "黄巾之乱初战；讨贼立功", "dashes": true}, {"from": "何进", "to": "董卓", "label": "召董卓入京；十常侍之乱", "title": "召董卓入京；十常侍之乱", "dashes": false}, {"from": "孙尚香", "to": "刘备", "label": "政治联姻；归吴", "title": "政治联姻；归吴", "dashes": true}, {"from": "陆逊", "to": "刘备", "label": "夷陵火烧连营", "title": "夷陵火烧连营", "dashes": true}, {"from": "邓艾", "to": "姜维", "label": "沓中屯田；剑阁灭蜀", "title": "沓中屯田；剑阁灭蜀", "dashes": true}, {"from": "钟会", "to": "姜维", "label": "伐蜀联军；成都之乱", "title": "伐蜀联军；成都之乱", "dashes": true}]};
+    const container = document.getElementById("graph");
+    const tip = document.getElementById("tip");
+
+    function visNodes(filter) {
+      return RAW.nodes
+        .filter(n => filter === "all" || n.group === filter)
+        .map(n => ({
+          id: n.id,
+          label: n.label,
+          title: n.faction + "\n" + n.id,
+          color: { background: n.color.bg, border: n.color.border, highlight: { background: "#e94560", border: "#fff" } },
+          font: { color: "#fff", size: 14 },
+        }));
+    }
+
+    function visEdges(filter, nodeIds) {
+      return RAW.edges
+        .filter(e => nodeIds.has(e.from) && nodeIds.has(e.to))
+        .map((e, i) => ({
+          id: i,
+          from: e.from,
+          to: e.to,
+          label: e.label,
+          title: e.title,
+          font: { color: "#ddd", size: 11, strokeWidth: 0, align: "middle" },
+          color: { color: e.dashes ? "rgba(200,200,200,.6)" : "rgba(233,69,96,.85)" },
+          dashes: e.dashes,
+          smooth: { type: "curvedCW", roundness: 0.15 },
+        }));
+    }
+
+    let network = null;
+    function draw(filter) {
+      const nodes = visNodes(filter);
+      const ids = new Set(nodes.map(n => n.id));
+      const edges = visEdges(filter, ids);
+      const data = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
+      const options = {
+        nodes: { shape: "dot", size: 22, borderWidth: 2 },
+        edges: {
+          width: 1.5,
+          arrows: { to: { enabled: false } },
+          labelHighlightBold: true,
+        },
+        physics: {
+          enabled: true,
+          solver: "forceAtlas2Based",
+          forceAtlas2Based: { gravitationalConstant: -42, springLength: 120, avoidOverlap: 0.8 },
+          stabilization: { iterations: 180 },
+        },
+        interaction: { hover: true, tooltipDelay: 80, zoomView: true, dragView: true },
+      };
+      if (network) network.destroy();
+      network = new vis.Network(container, data, options);
+      network.on("hoverEdge", p => {
+        if (p.edge !== undefined) {
+          const e = edges.get(p.edge);
+          tip.style.display = "block";
+          tip.textContent = e.from + " → " + e.to + "\n" + (e.title || e.label);
+        }
+      });
+      network.on("blurEdge", () => { tip.style.display = "none"; });
+      network.once("stabilizationIterationsDone", () => network.setOptions({ physics: false }));
+    }
+
+    document.querySelectorAll(".btns button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".btns button").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        draw(btn.dataset.filter);
+      });
+    });
+
+    draw("all");
+  </script>
+</body>
+</html>
