@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>系统架构图</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1>系统架构图</h1>
+      <p class="subtitle">LLM 路由 + 多路检索 + Rerank + 生成</p>
+    </header>
+    <nav class="nav">
+      <a href="system-overview.html">系统总体架构（分层）</a>
+      <a href="chat-sequence.html">在线问答时序</a>
+      <a href="retrieval-pipeline.html">三路检索详解</a>
+    </nav>
+    <section class="cards">
+      <a class="card" href="system-overview.html"><h2>1. 系统总体架构（分层）</h2><p>展示层、服务层、编排层、模型层、三路检索与存储层。</p></a>
+      <a class="card" href="chat-sequence.html"><h2>2. 在线问答时序</h2><p>从提问到路由、并行检索、Rerank 与答案生成。</p></a>
+      <a class="card" href="retrieval-pipeline.html"><h2>3. 三路检索详解</h2><p>R1 Hybrid、R2 Graph、R3 Catalog 触发与合并精排。</p></a>
+    </section>
+  </div>
+</body>
+</html>

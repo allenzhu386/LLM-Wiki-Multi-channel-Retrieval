@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>在线问答时序</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page">
+    <a class="back-link" href="index.html">返回架构图索引</a>
+    <section class="diagram-section">
+      <h2>在线问答时序</h2>
+      <p class="desc">用户提问 → Router → 并行检索 → 合并精排 → 生成答案</p>
+      <div class="diagram-wrap">
+        <pre class="mermaid">
+sequenceDiagram
+  actor U as 用户
+  participant W as Web 前端
+  participant A as FastAPI
+  participant P as pipeline
+  participant RT as Router LLM
+  participant R1 as R1 Hybrid
+  participant R2 as R2 Graph
+  participant R3 as R3 Catalog
+  participant RR as Rerank
+  participant G as Generator
+  participant DB as SQLite
+  U->>W: 输入问题
+  W->>A: POST /api/chat
+  A->>P: ask(query)
+  P->>DB: 保存用户消息
+  P->>RT: route_query
+  RT-->>P: 检索计划 JSON
+  par 并行检索
+    P->>R3: retrieve_catalog
+    P->>R2: retrieve_graph
+    P->>R1: retrieve_hybrid
+  end
+  R3 & R2 & R1-->>P: 候选文档
+  P->>P: 去重合并
+  P->>RR: rerank top_n
+  RR-->>P: 精排结果
+  P->>G: generate_answer
+  G-->>P: 答案
+  P->>DB: 保存消息与 trace
+  P-->>A: answer + citations
+  A-->>W: JSON
+  W-->>U: 答案与来源
+        </pre>
+      </div>
+    </section>
+  </div>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, theme: "dark", themeVariables: { primaryColor: "#1a2332", primaryTextColor: "#e8ecf0", primaryBorderColor: "#d4a84b", lineColor: "#5a6a80" } });
+</script>
+</body>
+</html>

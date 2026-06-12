@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>系统总体架构（分层）</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page">
+    <a class="back-link" href="index.html">返回架构图索引</a>
+    <section class="diagram-section">
+      <h2>系统总体架构（分层）</h2>
+      <p class="desc">展示层 → 服务层 → 编排层 → 模型层 → 三路检索 → 存储层</p>
+      <div class="diagram-wrap">
+        <pre class="mermaid">
+flowchart TB
+  subgraph Client["展示层"]
+    WEB["Web 前端"]
+    NETLIFY["Netlify 静态部署"]
+  end
+  subgraph API["服务层 FastAPI"]
+    MAIN["api/main.py"]
+    CHAT["POST /api/chat"]
+    INGEST["POST /api/ingest"]
+  end
+  subgraph Pipeline["编排层 pipeline"]
+    ASK["ask()"]
+    ROUTER["CoT 路由"]
+    RETRIEVE["多路检索"]
+    MERGE["去重合并"]
+    RERANK["精排"]
+    GEN["答案生成"]
+  end
+  subgraph LLM["模型层 DashScope"]
+    TURBO["qwen-turbo Router"]
+    PLUS["qwen-plus Generator"]
+    EMBED["text-embedding-v2"]
+  end
+  subgraph Retrieval["三路检索"]
+    R1["R1 Hybrid"]
+    R2["R2 Graph"]
+    R3["R3 Catalog"]
+  end
+  subgraph Storage["存储层"]
+    DB["SQLite rag.db"]
+    NPZ["embeddings.npz"]
+    WIKI["Wiki 知识库"]
+    SRC["原文 source"]
+  end
+  WEB --> MAIN
+  NETLIFY -.-> MAIN
+  MAIN --> CHAT --> ASK
+  ASK --> ROUTER --> RETRIEVE
+  RETRIEVE --> R1 & R2 & R3
+  R1 & R2 & R3 --> MERGE --> RERANK --> GEN
+  ROUTER --> TURBO
+  GEN --> PLUS
+  R1 --> EMBED
+  R1 & R2 & R3 --> DB
+  R1 --> NPZ
+  WIKI & SRC --> DB
+        </pre>
+      </div>
+    </section>
+  </div>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, theme: "dark", themeVariables: { primaryColor: "#1a2332", primaryTextColor: "#e8ecf0", primaryBorderColor: "#d4a84b", lineColor: "#5a6a80" } });
+</script>
+</body>
+</html>

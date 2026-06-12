@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>三路检索详解</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page">
+    <a class="back-link" href="index.html">返回架构图索引</a>
+    <section class="diagram-section">
+      <h2>三路检索详解</h2>
+      <p class="desc">CoT Router 按问题类型开启 R1/R2/R3，合并后经 Rerank 送入 Generator</p>
+      <div class="diagram-wrap">
+        <pre class="mermaid">
+flowchart TB
+  Q["用户 Query"] --> RT["CoT Router"]
+  RT -->|catalog| R3
+  RT -->|graph| R2
+  RT -->|hybrid| R1
+  subgraph R3["R3 目录检索"]
+    R3A["catalog_nodes"]
+    R3B["回次解析"]
+    R3A --> R3B
+  end
+  subgraph R2["R2 图谱检索"]
+    R2A["实体识别"]
+    R2B["RelationEdge 扩展"]
+    R2C["挂载 entity 文档"]
+    R2A --> R2B --> R2C
+  end
+  subgraph R1["R1 混合检索"]
+    R1A["向量 cosine"]
+    R1B["BM25"]
+    R1C["加权融合 alpha=0.55"]
+    R1A --> R1C
+    R1B --> R1C
+  end
+  R3 & R2 & R1 --> M["去重合并"]
+  M --> RR["Rerank"]
+  RR --> TOP["Top-N"]
+  TOP --> GEN["Generator 引用约束生成"]
+        </pre>
+      </div>
+    </section>
+  </div>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, theme: "dark", themeVariables: { primaryColor: "#1a2332", primaryTextColor: "#e8ecf0", primaryBorderColor: "#d4a84b", lineColor: "#5a6a80" } });
+</script>
+</body>
+</html>
